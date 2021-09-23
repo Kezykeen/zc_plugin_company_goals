@@ -1,12 +1,27 @@
-import express from 'express';
-import loadClient from './middlewares/load_client.js';
+/* eslint-disable no-console */
+require('dotenv').config({
+  path: './config.env'
+});
 
-const PORT = process.env.PORT || 8080;
+const app = require('./app');
+const logger = require('./utils/logger');
 
-const app = express();
+const PORT = process.env.PORT || 4000;
 
-loadClient(app);
+const server = app.listen(PORT, () => console.log(`Server is running on ${PORT}`));
 
-app.listen(PORT, () => {
-  console.log(`Server Started on Port: ${PORT}\nMode: ${process.env.NODE_ENV}\nURI: http://127.0.0.1:${PORT}`);
+process.on('unhandledRejection', (reason, promise) => {
+  logger.error(`Unhandled rejection at ${promise}, reason: ${reason.message}`);
+
+  server.close(() => {
+    process.exit(1);
+  });
+});
+
+process.on('SIGTERM', () => {
+  logger.info('SIGTERM Received, Shutting down gracefully');
+
+  server.close(() => {
+    logger.info('Process Terminated because of SIGTERM');
+  });
 });
